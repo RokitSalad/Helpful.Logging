@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 
 namespace Helpful.Logging
@@ -8,35 +9,9 @@ namespace Helpful.Logging
     {
         private static readonly AsyncLocal<ConcurrentDictionary<string, object>> AsyncLocalContext = new AsyncLocal<ConcurrentDictionary<string, object>>();
 
-        public const string RequestHeadersKey = "6492A684-9B1C-40FB-9B00-F0EDDCBA5A81";
+        private static ConcurrentDictionary<string, object> Dictionary => AsyncLocalContext.Value ?? (AsyncLocalContext.Value = new ConcurrentDictionary<string, object>());
 
-        private static readonly object ThreadLock = new object();
-
-        public static ConcurrentDictionary<string, object> Dictionary
-        {
-            get
-            {
-                if (AsyncLocalContext.Value == null)
-                {
-                    SafeInitialiseDictionary();
-                }
-                return AsyncLocalContext.Value;
-            }
-        }
-
-        private static void SafeInitialiseDictionary()
-        {
-            bool lockTaken = false;
-            Monitor.Enter(ThreadLock, ref lockTaken);
-            if (AsyncLocalContext.Value == null)
-            {
-                AsyncLocalContext.Value = new ConcurrentDictionary<string, object>();
-            }
-            if (lockTaken)
-            {
-                Monitor.Exit(ThreadLock);
-            }
-        }
+        public static ReadOnlyDictionary<string, object> ReadOnlyDictionary => new ReadOnlyDictionary<string, object>(Dictionary);
 
         public static void Set(string key, object value)
         {
@@ -57,6 +32,12 @@ namespace Helpful.Logging
                 return Dictionary[key];
             }
             return null;
+        }
+
+        public static object Delete(string key)
+        {
+            object val;
+            return Dictionary.TryRemove(key, out val) ? val : null;
         }
     }
 }
