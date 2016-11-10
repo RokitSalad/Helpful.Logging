@@ -13,7 +13,10 @@ namespace Helpful.Logging
 
             foreach (var kvp in LoggingContext.Dictionary.Where(d => d.Key != LoggingContext.RequestHeadersKey))
             {
-                eoColl.Add(kvp);
+                if(!string.IsNullOrEmpty(kvp.Key))
+                {
+                    eoColl.Add(kvp);
+                }
             }
             eoColl.Add(new KeyValuePair<string, object>("Message Content", innerMessage));
             dynamic result = eo;

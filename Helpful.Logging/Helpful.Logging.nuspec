@@ -2,14 +2,14 @@
 <package >
   <metadata>
     <id>Helpful.Logging</id>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <title>Helpful.Logging</title>
     <authors>rokitsalad</authors>
     <owners>rokitsalad</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A log4net logging library which will handle correlation id's in headers and other trace info.</description>
     <projectUrl>https://github.com/RokitSalad/Helpful.Logging.Owin</projectUrl>
-    <releaseNotes>Message output now easily serializable using newtonsoft</releaseNotes>
+    <releaseNotes>Adding some thread safety features</releaseNotes>
     <tags></tags>
     <dependencies>
       <dependency id="log4net" version="2.0.5" />

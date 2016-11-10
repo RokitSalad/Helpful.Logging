@@ -1,51 +1,60 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Helpful.Logging
 {
     public static class LoggingContext
     {
-        private static readonly AsyncLocal<Dictionary<string, object>> AsyncLocalContext = new AsyncLocal<Dictionary<string, object>>();
+        private static readonly AsyncLocal<ConcurrentDictionary<string, object>> AsyncLocalContext = new AsyncLocal<ConcurrentDictionary<string, object>>();
 
         public const string RequestHeadersKey = "6492A684-9B1C-40FB-9B00-F0EDDCBA5A81";
 
-        public static IDictionary<string, object> Dictionary
+        private static readonly object ThreadLock = new object();
+
+        public static ConcurrentDictionary<string, object> Dictionary
         {
             get
             {
                 if (AsyncLocalContext.Value == null)
                 {
-                    AsyncLocalContext.Value = new Dictionary<string, object>();
+                    SafeInitialiseDictionary();
                 }
                 return AsyncLocalContext.Value;
             }
         }
 
-        public static void Set(string key, object value)
+        private static void SafeInitialiseDictionary()
         {
+            bool lockTaken = false;
+            Monitor.Enter(ThreadLock, ref lockTaken);
             if (AsyncLocalContext.Value == null)
             {
-                AsyncLocalContext.Value = new Dictionary<string, object>();
+                AsyncLocalContext.Value = new ConcurrentDictionary<string, object>();
             }
-            if (AsyncLocalContext.Value.ContainsKey(key))
+            if (lockTaken)
             {
-                AsyncLocalContext.Value[key] = value;
+                Monitor.Exit(ThreadLock);
+            }
+        }
+
+        public static void Set(string key, object value)
+        {
+            if (Dictionary.ContainsKey(key))
+            {
+                Dictionary[key] = value;
             }
             else
             {
-                AsyncLocalContext.Value.Add(key, value);
+                Dictionary.GetOrAdd(key, value);
             }
         }
 
         public static object Get(string key)
         {
-            if (AsyncLocalContext.Value == null)
+            if (Dictionary.ContainsKey(key))
             {
-                AsyncLocalContext.Value = new Dictionary<string, object>();
-            }
-            if (AsyncLocalContext.Value.ContainsKey(key))
-            {
-                return AsyncLocalContext.Value[key];
+                return Dictionary[key];
             }
             return null;
         }
